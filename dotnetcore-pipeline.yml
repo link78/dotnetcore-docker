@@ -1,6 +1,6 @@
 trigger:
 - '*'
-
+# run and download azure pipeline for cd
 pool:
   vmImage: 'ubuntu-16.04'
 
