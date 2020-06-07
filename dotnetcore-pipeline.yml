@@ -74,7 +74,7 @@ stages:
           - download: current
             artifact: drop
           - task: AzureWebApp@1
-            displayName: 'Azure App Service Deploy: aspnet core app'
+            displayName: 'Azure App Service Deploy: web app'
             inputs: 
               azureSubscription: 'WebAppSvcConnection'
               appName: $(WebAppName)
