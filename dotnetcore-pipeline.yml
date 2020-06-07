@@ -9,37 +9,73 @@ variables:
   wwwrootDir: './'
   dotnetSdkVersion: '3.1.100'
 
-steps:
-- task: UseDotNet@2
-  displayName: 'Use .NET Core SDK $(dotnetSdkVersion)'
-  inputs:
-    version: '$(dotnetSdkVersion)'
 
-- script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
-  displayName: 'Write build info'
-  workingDirectory: $(wwwrootDir)
+stages: 
+- stage: 'Build Web App'
+  displayName: 'Build web application'
+  jobs: 
+  - job: 'Build'
+    displayName: 'Build Job'
+    pool: 
+      vmImage: 'ubuntu-16.04'
+      demands: 
+        - npm
+    
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Use .NET Core SDK $(dotnetSdkVersion)'
+      inputs:
+        version: '$(dotnetSdkVersion)'
 
-- task: DotNetCoreCLI@2
-  displayName: 'Restore project dependencies'
-  inputs:
-    command: 'restore'
-    projects: '**/*.csproj'
+    - script: 'echo "$(Build.DefinitionName), $(Build.BuildId), $(Build.BuildNumber)" > buildinfo.txt'
+      displayName: 'Write build info'
+      workingDirectory: $(wwwrootDir)
 
-- task: DotNetCoreCLI@2
-  displayName: 'Build the project - $(buildConfiguration)'
-  inputs:
-    command: 'build'
-    arguments: '--no-restore --configuration $(buildConfiguration)'
-    projects: '**/*.csproj'
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore project dependencies'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
 
-- task: DotNetCoreCLI@2
-  displayName: 'Publish the project - $(buildConfiguration)'
-  inputs:
-    command: 'publish'
-    projects: '**/*.csproj'
-    publishWebProjects: false
-    arguments: '--no-build --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/$(buildConfiguration)'
-    zipAfterPublish: true
+    - task: DotNetCoreCLI@2
+      displayName: 'Build the project - $(buildConfiguration)'
+      inputs:
+        command: 'build'
+        arguments: '--no-restore --configuration $(buildConfiguration)'
+        projects: '**/*.csproj'
 
-- publish: '$(Build.ArtifactStagingDirectory)'
-  artifact: drop
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish the project - $(buildConfiguration)'
+      inputs:
+        command: 'publish'
+        projects: '**/*.csproj'
+        publishWebProjects: false
+        arguments: '--no-build --configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/$(buildConfiguration)'
+        zipAfterPublish: true
+
+    - publish: '$(Build.ArtifactStagingDirectory)'
+      artifact: drop
+
+
+- stage: 'Build Web App'
+  displayName: 'Build web application'
+  jobs: 
+  - job: 'Build'
+    displayName: 'Build Job'
+    pool: 
+      vmImage: 'ubuntu-16.04' 
+    environment: dev
+    variables:
+    - group: ReleaseWeb
+    strategy: 
+      runOnce: 
+      deploy: 
+        steps: 
+        - download: current
+          artifact: drop
+        - task: AzureWebApp@1
+          displayName: 'Azure App Service Deploy: aspnet core app'
+          inputs: 
+            azureSubscription: 'WebAppSvcConnection'
+            appName: $(WebAppName)
+            package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
