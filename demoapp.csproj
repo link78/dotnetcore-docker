@@ -3,13 +3,4 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
-<configuration>
-  <packageSources>
-    <clear />
-
-    <add key="fasocloudappFeed" value="https://pkgs.dev.azure.com/royacloud/FasoCoreApp/_packaging/fasocloudappFeed/nuget/v3/index.json" />
-
-  </packageSources>
-</configuration>
-
 </Project>
